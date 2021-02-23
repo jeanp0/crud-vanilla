@@ -1,3 +1,9 @@
+import fetchClients from "./helpers/fetchClients.js";
+import getClientForm from "./helpers/getClientForm.js";
+import setClientForm from "./helpers/setClientForm.js";
+import ClientRow from "./components/ClientRow.js";
+import CityOption from "./components/CityOption.js";
+
 // constantes del DOM
 const $selectZone = document.getElementById("zone");
 const $formClient = document.getElementById("formClient");
@@ -8,19 +14,10 @@ let mode = "";
 
 /* Listar tabla de clientes */
 
-async function fetchDataFromDB() {
-  const url = "http://localhost/crud-vanilla/backend/crud-clients.php";
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ option: 1 }),
-  })
+async function listClients() {
+  const response = await fetchClients(1)
     .then((res) => res.json())
     .catch((error) => console.error("Error:", error));
-  // console.log(response);
-
   drawRows(response);
 }
 
@@ -28,94 +25,41 @@ function drawRows(clients) {
   // Por cada cliente se crea y agrega una fila a la tabla del DOM
   clients.forEach((client) => createRow(client));
 
-  // Una vez dibujada todas las tablas, se agregan los eventos para update
-  let $btnsUpdate = document.getElementsByClassName("btnUpdate");
-  $btnsUpdate = Array.from($btnsUpdate);
+  // Con todas las filas creadas se agregan los eventos
 
-  // Evento click UPDATE
+  // Update client event
+  let $btnsUpdate = Array.from(document.getElementsByClassName("btnUpdate"));
   $btnsUpdate.map((btn) => {
     btn.addEventListener("click", async (e) => {
-      // Se actualiza el valor del mode para saber si guardar o actualizar
+      const CI = e.target.parentElement.parentElement.getAttribute("CI");
+      const client = await getClient(CI);
       mode = "update";
       document.getElementById("CI").disabled = true;
-      const CI = e.target.parentElement.parentElement.getAttribute("CI");
-      // Se llena el formulario con los valores obtenidos según el CI
-      setFormDataByCI(CI);
+
+      setClientForm(client);
     });
   });
 
-  // Y para delete
-  let $btnsDelete = document.getElementsByClassName("btnDelete");
-  $btnsDelete = Array.from($btnsDelete);
-
-  // Evento click DELETE
+  // Delete client event
+  let $btnsDelete = Array.from(document.getElementsByClassName("btnDelete"));
   $btnsDelete.map((btn) => {
-    btn.addEventListener("click", async (e) => {
-      const CI = e.target.parentElement.parentElement.getAttribute("CI");
-      // Se elimina un cliente según su CI
-      const response = await getOrDeleteClienteFromDB(4, CI);
-      console.log(response);
-      // reset al body del table
-      secureReChargeTBody();
-    });
+    btn.addEventListener("click", (e) => deleteClient(e));
   });
 }
 
 function createRow(client) {
   const clientRow = document.createElement("tr");
   clientRow.setAttribute("CI", client.CI);
-  clientRow.innerHTML = RowComponent(client);
+  clientRow.innerHTML = ClientRow(client);
   document.getElementById("table_body").appendChild(clientRow);
-}
-
-function RowComponent({ CI, name, email, age, zone, city }) {
-  return `
-    <th scope="row">${CI}</th>
-    <td>${name}</td>
-    <td>${email}</td>
-    <td>${age}</td>
-    <td>${zone}</td>
-    <td>${city}</td>
-    <td class="d-flex justify-content-evenly">
-      <button class="btn btn-primary btnUpdate" data-bs-toggle="modal" data-bs-target="#staticBackdrop">Update</button>
-      <button class="btn btn-danger btnDelete">Delete</button>
-    </td>
-  `;
 }
 
 /* Llenar el formulario con el Cliente seleccionado para editar */
 
-async function setFormDataByCI(CI) {
-  const client = await getOrDeleteClienteFromDB(5, CI);
-  document.getElementById("CI").value = client.CI;
-  document.getElementById("name").value = client.name;
-  document.getElementById("email").value = client.email;
-  document.getElementById("age").value = client.age;
-  document.getElementById("zone").value = client.zone;
-  handlerSelect(); // actualizar el valor del Select según la zona...
-  document.getElementById("city").value = client.city;
-  // console.log(client);
-}
-
-async function getOrDeleteClienteFromDB(option, CI) {
-  // option=4 para ELIMINAR el cliente.
-  // option=5 para OBTENER el cliente
-  const url = "http://localhost/crud-vanilla/backend/crud-clients.php";
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ option, CI }),
-  })
-    .then((res) => res.json())
-    .catch((error) => console.error("Error:", error));
-  return response;
-}
-
 /* Dinamismo del Select Zona/Ciudad */
 
 function handlerSelect() {
+  // Esta función actualiza los valores del Select
   const northCities = [
     { name: "Sauces", value: "Sauces" },
     { name: "Ceibos", value: "Ceibos" },
@@ -135,32 +79,66 @@ function handlerSelect() {
   ];
 
   if ($selectZone.value === "North") {
-    updateSelect(northCities);
+    updateCitiesSelect(northCities);
   } else if ($selectZone.value === "Center") {
-    updateSelect(centerCities);
+    updateCitiesSelect(centerCities);
   } else if ($selectZone.value === "South") {
-    updateSelect(southCities);
+    updateCitiesSelect(southCities);
   }
 }
 
-function updateSelect(cities) {
+function updateCitiesSelect(cities) {
   const $selectCity = document.getElementById("city");
   $selectCity.innerHTML =
     "<option selected disabled>---Select a zone---</option>";
   cities.map((city) => {
-    const option = OptionComponent(city.value, city.name);
+    const option = CityOption(city.value, city.name);
     $selectCity.appendChild(option);
   });
 }
 
-function OptionComponent(value, name) {
-  const option = document.createElement("option");
-  option.value = value;
-  option.innerText = name;
-  return option;
+async function getClient(CI) {
+  // option=5 para OBTENER el cliente
+  const response = await fetchClients(5, CI)
+    .then((res) => res.json())
+    .catch((error) => console.error("Error:", error));
+  console.log(response);
+  return response;
 }
 
-/* Eventos de botones */
+async function createClient({ CI, name, email, age, zone, city }) {
+  const response = await fetchClients(2, CI, name, email, age, zone, city)
+    .then((res) => res.json())
+    .catch((error) => console.error("Error:", error));
+  console.log(response);
+}
+
+async function updateClient({ CI, name, email, age, zone, city }) {
+  const response = await fetchClients(3, CI, name, email, age, zone, city)
+    .then((res) => res.json())
+    .catch((error) => console.error("Error:", error));
+  console.log(response);
+}
+
+async function deleteClient(event) {
+  // option=4 para ELIMINAR el cliente.
+  const CI = event.target.parentElement.parentElement.getAttribute("CI");
+  const response = await fetchClients(4, CI)
+    .then((res) => res.json())
+    .catch((error) => console.error("Error:", error));
+  console.log(response);
+
+  secureReChargeTBody();
+}
+
+function secureReChargeTBody() {
+  document.getElementById("table_body").innerHTML = "";
+  setTimeout(() => {
+    listClients();
+  }, 50);
+}
+
+/* Eventos DOM*/
 
 // Evento click CANCEL
 document.getElementById("btnCancel").addEventListener("click", () => {
@@ -168,33 +146,23 @@ document.getElementById("btnCancel").addEventListener("click", () => {
   $formClient.reset();
 });
 
-// Evento CLICK SAVE
+// Evento click SAVE
 document.getElementById("btnSave").addEventListener("click", () => {
   // crea un cliente con los valores del formulario
-  const client = {
-    CI: document.getElementById("CI").value,
-    name: document.getElementById("name").value,
-    email: document.getElementById("email").value,
-    age: document.getElementById("age").value,
-    zone: document.getElementById("zone").value,
-    city: document.getElementById("city").value,
-  };
+  const client = getClientForm();
   if (mode === "create") {
     // inserta el cliente a la base de datos
-    createOrUpdateClientFromDB(2, client);
+    createClient(client);
   } else if (mode === "update") {
     // actualiza el cliente en la base de datos
-    createOrUpdateClientFromDB(3, client);
+    updateClient(client);
   }
-
   // reset al body del table
   secureReChargeTBody();
-
-  // reset al formulario
   $formClient.reset();
 });
 
-// Evento click CREATE (+)
+// Evento click CREATE
 $btnCreate.addEventListener("click", () => {
   // Se actualiza el valor del mode para saber si guardar o actualizar
   mode = "create";
@@ -202,29 +170,7 @@ $btnCreate.addEventListener("click", () => {
   document.getElementById("CI").disabled = false;
 });
 
-async function createOrUpdateClientFromDB(
-  option,
-  { CI, name, email, age, zone, city }
-) {
-  const url = "http://localhost/crud-vanilla/backend/crud-clients.php";
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ option, CI, name, email, age, zone, city }),
-  })
-    .then((res) => res.json())
-    .catch((error) => console.error("Error:", error));
-  console.log(response);
-}
-
-function secureReChargeTBody() {
-  document.getElementById("table_body").innerHTML = "";
-  setTimeout(() => {
-    fetchDataFromDB();
-  }, 50);
-}
-
-fetchDataFromDB();
+// Evento click Zone cambia CIudad
 $selectZone.addEventListener("change", handlerSelect);
+
+listClients();
