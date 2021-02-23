@@ -1,8 +1,8 @@
 import fetchClients from "./helpers/fetchClients.js";
 import getClientForm from "./helpers/getClientForm.js";
-import setClientForm from "./helpers/setClientForm.js";
 import ClientRow from "./components/ClientRow.js";
 import CityOption from "./components/CityOption.js";
+import fetchCities from "./helpers/fetchCities.js";
 
 // constantes del DOM
 const $selectZone = document.getElementById("zone");
@@ -58,33 +58,20 @@ function createRow(client) {
 
 /* Dinamismo del Select Zona/Ciudad */
 
-function handlerSelect() {
-  // Esta función actualiza los valores del Select
-  const northCities = [
-    { name: "Sauces", value: "Sauces" },
-    { name: "Ceibos", value: "Ceibos" },
-    { name: "Urdesa", value: "Urdesa" },
-  ];
+async function setClientForm(client) {
+  // Se llena el formulario con los valores obtenidos según el CI
+  document.getElementById("CI").value = client.CI;
+  document.getElementById("name").value = client.name;
+  document.getElementById("email").value = client.email;
+  document.getElementById("age").value = client.age;
+  document.getElementById("zone").value = client.zone;
+  await handlerSelect(); // actualizar el valor del Select según la zona...
+  document.getElementById("city").value = client.city;
+}
 
-  const centerCities = [
-    { name: "9 de Octubre", value: "9 de Octubre" },
-    { name: "Ismael", value: "Ismael" },
-    { name: "Antepara", value: "Antepara" },
-  ];
-
-  const southCities = [
-    { name: "Floresta", value: "Floresta" },
-    { name: "Guasmo", value: "Guasmo" },
-    { name: "Tulipanes", value: "Tulipanes" },
-  ];
-
-  if ($selectZone.value === "North") {
-    updateCitiesSelect(northCities);
-  } else if ($selectZone.value === "Center") {
-    updateCitiesSelect(centerCities);
-  } else if ($selectZone.value === "South") {
-    updateCitiesSelect(southCities);
-  }
+async function handlerSelect() {
+  const cities = await getCities($selectZone.value);
+  updateCitiesSelect(cities);
 }
 
 function updateCitiesSelect(cities) {
@@ -92,9 +79,17 @@ function updateCitiesSelect(cities) {
   $selectCity.innerHTML =
     "<option selected disabled>---Select a zone---</option>";
   cities.map((city) => {
-    const option = CityOption(city.value, city.name);
+    const option = CityOption(city.city_name, city.city_name);
     $selectCity.appendChild(option);
   });
+}
+
+async function getCities(zone_name) {
+  const response = await fetchCities(zone_name)
+    .then((res) => res.json())
+    .catch((error) => console.error("Error:", error));
+  console.log(response);
+  return response;
 }
 
 async function getClient(CI) {
@@ -106,15 +101,15 @@ async function getClient(CI) {
   return response;
 }
 
-async function createClient({ CI, name, email, age, zone, city }) {
-  const response = await fetchClients(2, CI, name, email, age, zone, city)
+async function createClient({ CI, name, email, age, city_name }) {
+  const response = await fetchClients(2, CI, name, email, age, city_name)
     .then((res) => res.json())
     .catch((error) => console.error("Error:", error));
   console.log(response);
 }
 
-async function updateClient({ CI, name, email, age, zone, city }) {
-  const response = await fetchClients(3, CI, name, email, age, zone, city)
+async function updateClient({ CI, name, email, age, city_name }) {
+  const response = await fetchClients(3, CI, name, email, age, city_name)
     .then((res) => res.json())
     .catch((error) => console.error("Error:", error));
   console.log(response);

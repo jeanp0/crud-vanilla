@@ -28,19 +28,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $name = (isset($_POST['name'])) ? $_POST['name'] : "";
     $email = (isset($_POST['email'])) ? $_POST['email'] : "";
     $age = (isset($_POST['age'])) ? $_POST['age'] : "";
-    $zone = (isset($_POST['zone'])) ? $_POST['zone'] : "";
-    $city = (isset($_POST['city'])) ? $_POST['city'] : "";
+    $city_name = (isset($_POST['city_name'])) ? $_POST['city_name'] : "";
+    $zone_name = (isset($_POST['zone_name'])) ? $_POST['zone_name'] : "";
 
     if (isset($option)) {
         switch ($option) {
             case 1:
-                $query = "SELECT CI, name, email, age, zone, city FROM clients";
+                $query = "SELECT cl.CI, cl.name, cl.email, cl.age, ci.city_name 
+                            FROM clients cl
+                            INNER JOIN cities ci
+                            ON cl.city_id = ci.city_id";
                 $result = $con->prepare($query);
                 $result->execute();
                 $data = $result->fetchAll(PDO::FETCH_ASSOC);
                 break;
             case 2:
-                $query = "INSERT INTO clients (CI, name, email, age, zone, city) VALUES('$CI', '$name', '$email', $age, '$zone', '$city')";
+                $query = "INSERT INTO clients (CI, name, email, age, city_id) VALUES('$CI', '$name', '$email', $age, 
+                            (SELECT city_id FROM cities WHERE city_name='$city_name'))";
                 $result = $con->prepare($query);
                 $result->execute();
 
@@ -71,6 +75,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $result = $con->prepare($query);
                 $result->execute();
                 $data = $result->fetch(PDO::FETCH_ASSOC);
+                break;
+            case 6:
+                $query = "SELECT ci.city_name 
+                            FROM cities ci
+                            INNER JOIN zones zo 
+                            ON ci.zone_id = zo.zone_id
+                            WHERE zo.zone_name='$zone_name'";
+                $result = $con->prepare($query);
+                $result->execute();
+                $data = $result->fetchAll(PDO::FETCH_ASSOC);
                 break;
             default:
                 break;
