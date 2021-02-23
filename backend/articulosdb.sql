@@ -2,10 +2,10 @@
 -- version 5.0.4
 -- https://www.phpmyadmin.net/
 --
--- Host: 127.0.0.1
--- Generation Time: Feb 18, 2021 at 08:11 AM
+-- Host: localhost
+-- Generation Time: Feb 23, 2021 at 01:39 AM
 -- Server version: 10.4.17-MariaDB
--- PHP Version: 8.0.0
+-- PHP Version: 8.0.2
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -53,6 +53,33 @@ INSERT INTO `articulos` (`id`, `description`, `price`, `stock`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `cities`
+--
+
+CREATE TABLE `cities` (
+  `city_id` int(11) NOT NULL,
+  `zone_id` int(11) NOT NULL,
+  `name` varchar(150) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Dumping data for table `cities`
+--
+
+INSERT INTO `cities` (`city_id`, `zone_id`, `name`) VALUES
+(1, 1, 'Sauces'),
+(2, 1, 'Ceibos'),
+(3, 1, 'Urdesa'),
+(4, 2, '9 de Octubre'),
+(5, 2, 'Ismael'),
+(6, 2, 'Antepara'),
+(7, 3, 'Floresta'),
+(8, 3, 'Guasmo'),
+(9, 3, 'Tulipanes');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `clients`
 --
 
@@ -66,6 +93,35 @@ CREATE TABLE `clients` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
+-- Dumping data for table `clients`
+--
+
+INSERT INTO `clients` (`CI`, `name`, `email`, `age`, `zone`, `city`) VALUES
+('091923289', 'Georgina', 'geor@gmail.com', 41, 'Center', 'Ismael'),
+('0956257497', 'Jeanpier', 'jeanpi3rm@gmail.com', 22, 'South', 'Floresta'),
+('232', 'sdds', 'jeanpi3rm@gmail.com', 122, 'Center', '9 de Octubre');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `zones`
+--
+
+CREATE TABLE `zones` (
+  `zone_id` int(11) NOT NULL,
+  `name` varchar(100) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Dumping data for table `zones`
+--
+
+INSERT INTO `zones` (`zone_id`, `name`) VALUES
+(1, 'North'),
+(2, 'Center'),
+(3, 'South');
+
+--
 -- Indexes for dumped tables
 --
 
@@ -76,10 +132,23 @@ ALTER TABLE `articulos`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `cities`
+--
+ALTER TABLE `cities`
+  ADD PRIMARY KEY (`city_id`),
+  ADD KEY `fk_zone` (`zone_id`);
+
+--
 -- Indexes for table `clients`
 --
 ALTER TABLE `clients`
   ADD PRIMARY KEY (`CI`);
+
+--
+-- Indexes for table `zones`
+--
+ALTER TABLE `zones`
+  ADD PRIMARY KEY (`zone_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -90,6 +159,28 @@ ALTER TABLE `clients`
 --
 ALTER TABLE `articulos`
   MODIFY `id` int(255) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+
+--
+-- AUTO_INCREMENT for table `cities`
+--
+ALTER TABLE `cities`
+  MODIFY `city_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
+-- AUTO_INCREMENT for table `zones`
+--
+ALTER TABLE `zones`
+  MODIFY `zone_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `cities`
+--
+ALTER TABLE `cities`
+  ADD CONSTRAINT `fk_zone` FOREIGN KEY (`zone_id`) REFERENCES `zones` (`zone_id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
